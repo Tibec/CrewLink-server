@@ -7,7 +7,7 @@ import socketIO from 'socket.io';
 import Tracer from 'tracer';
 import morgan from 'morgan';
 
-const supportedCrewLinkVersions = new Set(['2.0.0', '2.0.1']);
+const supportedCrewLinkVersions = new Set(['42.0']);
 const httpsEnabled = !!process.env.HTTPS;
 
 const port = process.env.PORT || (httpsEnabled ? '443' : '9736');
@@ -142,6 +142,18 @@ io.on('connection', (socket: socketIO.Socket) => {
 		if (code) {
 			socket.leave(code);
 			clients.delete(socket.id);
+		}
+	})
+
+	socket.on('updateSettings', (settingsJson:string) => {
+		if (typeof settingsJson !== 'string') {
+			socket.disconnect();
+			logger.error(`Socket %s sent invalid settings-update command: %s`, socket.id, c, settingsJson);
+			return;
+		}
+
+		if(code) {
+			socket.to(code).broadcast.emit('setSettings', settingsJson);
 		}
 	})
 
