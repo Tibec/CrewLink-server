@@ -87,6 +87,7 @@ io.on('connection', (socket: socketIO.Socket) => {
 	connectionCount++;
 	logger.info("Total connected: %d", connectionCount);
 	let code: string | null = null;
+	let settings: string | null = null;
 
 	socket.on('join', (c: string, id: number, clientId: number) => {
 		if (typeof c !== 'string' || typeof id !== 'number' || typeof clientId !== 'number') {
@@ -115,6 +116,11 @@ io.on('connection', (socket: socketIO.Socket) => {
 			clientId: clientId === Math.pow(2, 32) - 1 ? null : clientId
 		});
 		socket.emit('setClients', otherClients);
+		
+		if(settings) {
+			socket.to(code).broadcast.emit('setSettings', settings);
+		}
+		
 	});
 
 	socket.on('id', (id: number, clientId: number) => {
@@ -145,13 +151,15 @@ io.on('connection', (socket: socketIO.Socket) => {
 		}
 	})
 
-	socket.on('updateSettings', (settingsJson:string) => {
+	socket.on('setSettings', (settingsJson:string) => {
 		if (typeof settingsJson !== 'string') {
 			socket.disconnect();
 			logger.error(`Socket %s sent invalid settings-update command: %s`, socket.id, settingsJson);
 			return;
 		}
 
+		settings = settingsJson;
+		
 		if(code) {
 			socket.to(code).broadcast.emit('setSettings', settingsJson);
 		}
