@@ -32,6 +32,9 @@ const io = socketIO(server);
 
 const clients = new Map<string, Client>();
 
+// 						 roomId  settingsJson
+const roomSettings = new Map<string, string>();
+
 interface Client {
 	playerId: number;
 	clientId: number;
@@ -117,8 +120,8 @@ io.on('connection', (socket: socketIO.Socket) => {
 		});
 		socket.emit('setClients', otherClients);
 		
-		if(settings) {
-			socket.to(code).broadcast.emit('setSettings', settings);
+		if(roomSettings.has(code)) {
+			socket.to(code).broadcast.emit('setSettings', roomSettings.get(code));
 		}
 		
 	});
@@ -157,10 +160,9 @@ io.on('connection', (socket: socketIO.Socket) => {
 			logger.error(`Socket %s sent invalid settings-update command: %s`, socket.id, settingsJson);
 			return;
 		}
-
-		settings = settingsJson;
 		
 		if(code) {
+			roomSettings.set(code, settingsJson)
 			socket.to(code).broadcast.emit('setSettings', settingsJson);
 		}
 	})
